@@ -19,8 +19,20 @@ switch ($command) {
     break;
   case "try-decryp":
     $text = readline("text: ");
-    echo tryDecryp($text);
-    echo "\n";
+    $result = tryDecryp($text);
+    $resultText = $result['result'];
+    $textList = $result['textList'];
+    if ($resultText) {
+      echo $resultText . "\n";
+    }
+    echo "Don't found text? there are " . count($textList) . ". possible results.\n";
+    $printToFile = (strtolower(readline("you want to print them to a file? [y/n]: ")) === "y") ? true : false;
+    if ($printToFile) {
+      $file = readline("file: ");
+      if (is_file($file)) {
+        writeTextListToFile($textList, $file);
+      }
+    }
     break;
   default:
     echo "Unknown command " . $command;
@@ -90,17 +102,20 @@ function getAlphabeticLetterByCaesarLetter($letter, $caesarAlphabet)
 
 function tryDecryp($crypt)
 {
+  $result = ['result' => null,'textList' => []];
   for ($i = 0; $i < count(ALPHABET); $i++) {
     $caesarAlphabet = getCaesarAlphabet($i);
     $letters = str_split($crypt);
     $text = implode(decrypLetters($letters, $caesarAlphabet));
-    if (isText($text)) {
+    array_push($result['textList'], $text);
+    if (isText($text) && !$result['result']) {
       echo "\n";
       echo "key was " . $i;
       echo "\n";
-      return $text;
+      $result['result'] = $text;
     }
   }
+  return $result;
 
 }
 
@@ -114,7 +129,7 @@ function isText($text)
   $biggestCountLetter = "";
   $biggestCount = 0;
   foreach ($countOfLettersInText as $letter => $count) {
-    if ($count > $biggestCount){
+    if ($count > $biggestCount) {
       $biggestCount = $count;
       $biggestCountLetter = $letter;
     }
@@ -133,6 +148,7 @@ function countOccurrenceOfLetterInText($letter, $text)
   }
   return $count;
 }
+
 function getCaesarAlphabet($key)
 {
   $caesarAlphabet = [];
@@ -144,6 +160,15 @@ function getCaesarAlphabet($key)
     }
   }
   return $caesarAlphabet;
+}
+
+function writeTextListToFile($textList, $file)
+{
+
+  if (file_exists($file)) {
+    file_put_contents($file,'');
+    file_put_contents($file, implode(',', $textList), FILE_APPEND | LOCK_EX);
+  }
 }
 
 function printAlphabet($alphabet)
